@@ -1,24 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { placeSchema, type ProfileFormValues } from "@/lib/form-schema";
 import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
@@ -33,111 +22,127 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import MapSelection from "@/components/layout/MapSelection";
-
+import { trpc } from "@/utils/trpc";
+import { useSession } from "next-auth/react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, Bell, Satellite } from 'lucide-react';
+import { toast, useToast } from "@/components/ui/use-toast";
 interface ProfileFormType {
-  initialData: any | null;
-  categories: any;
+  initialData?: any | null;
 }
 
+
+const DataDisplay = ({ formData }) => {
+  if (!formData) return null;
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MapPin className="mr-2" /> Location Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p><strong>Name:</strong> {formData.name || 'N/A'}</p>
+          <p><strong>Latitude:</strong> {formData.latitude}</p>
+          <p><strong>Longitude:</strong> {formData.longitude}</p>
+        </CardContent>
+      </Card>
+
+      {
+        // Display GeoJSON data if available
+        formData.geojson && (
+          <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MapPin className="mr-2" /> GeoJSON Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p><strong>Type:</strong> {formData.geojson.type}</p>
+          <p><strong>Geometry Type:</strong> {formData.geojson.geometry.type}</p>
+          <details>
+            <summary className="cursor-pointer">View Coordinates</summary>
+            <pre className="mt-2 p-2 bg-gray-100 rounded-md text-xs overflow-auto">
+              {JSON.stringify(formData.geojson.geometry.coordinates, null, 2)}
+            </pre>
+          </details>
+        </CardContent>
+      </Card>
+        )
+      }
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bell className="mr-2" /> Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {formData.notifications.map((notification, index) => (
+            <div key={index} className="mb-4 last:mb-0">
+              <p className="flex items-center">
+                <Satellite className="mr-2" /> <strong>{notification.satellite}</strong>
+              </p>
+              <p><strong>Notify Before:</strong> {notification.notifyBefore} days</p>
+              <p><strong>Notify Via:</strong> {notification.notifyIn}</p>
+              {notification.smsNumber && <p><strong>SMS Number:</strong> {notification.smsNumber}</p>}
+              {notification.email && <p><strong>Email:</strong> {notification.email}</p>}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+
+
 export const CreatePlaceWithNotification: React.FC<ProfileFormType> = ({
-  initialData,
-  categories,
+  initialData = null,
 }) => {
-  const params = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [data, setData] = useState({});
-
-  const title = initialData ? "Edit product" : "Add New Place";
-  const description = initialData
-    ? "Edit a product."
-    : "To create a new place to analyze and get notified, please add details of it here";
-  const action = initialData ? "Save changes" : "Create";
-
-  const defaultValues = {
-    name: "",
-    latitude: "",
-    longitude: "",
-    geojson: null,
-    notifications: [
+  const [formData, setFormData] = useState({
+    id : initialData?.id || null,
+    name: initialData?.name || "",
+    latitude: initialData?.latitude || "",
+    longitude: initialData?.longitude || "",
+    geojson: initialData?.geojson || {},
+    notifications: initialData?.notifications || [
       {
-        satelite: "",
+        satellite: "",
         notifyBefore: "",
         notifyIn: "",
         smsNumber: "",
         email: "",
       },
     ],
-  };
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(placeSchema),
-    defaultValues,
-    mode: "onChange",
   });
 
-  const {
-    control,
-    formState: { errors },
-  } = form;
+  const { data: session } = useSession();
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "notifications",
+  console.log("Session", session);
+// addLocationWithNotification
+const addExamMutation = trpc.addLocationWithNotification.useMutation();
+
+const addUpdatePlace = () => {
+  addExamMutation.mutate({
+    place: formData,
+    email : session?.user?.email as string,
   });
+};
 
-  const onSubmit: SubmitHandler<ProfileFormValues> = async (formData) => {
-    try {
-      setLoading(true);
-      // Handle form submission logic here
-      console.log(formData);
-      setData(formData);
-      // Comment out the router.push for now, so we can see the final page
-      // router.push(`/dashboard/places`);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const title = initialData ? "Edit Place" : "Add New Place";
+  const description = initialData
+    ? "Edit a Place."
+    : "To create a new place to analyze and get notified, please add details of it here";
+  const action = initialData ? "Save changes" : "Create";
 
-  const steps = [
-    {
-      id: "Step 1",
-      name: "Place Information",
-      fields: ["name", "latitude", "longitude", "geojson"],
-    },
-    {
-      id: "Step 2",
-      name: "Set up Notifications",
-      fields: fields.flatMap((_, index) => [
-        `notifications.${index}.satelite`,
-        `notifications.${index}.notifyBefore`,
-        `notifications.${index}.notifyIn`,
-        `notifications.${index}.smsNumber`,
-        `notifications.${index}.email`,
-      ]),
-    },
-    { id: "Step 3", name: "Complete" },
-  ];
-
-  const next = async () => {
-    const fields = steps[currentStep].fields;
-    await form.handleSubmit(onSubmit)();
-    const output = await form.trigger(
-      fields as Array<keyof ProfileFormValues>,
-      {
-        shouldFocus: true,
-      },
-    );
-
-    if (!output) return;
-
+  const next = () => {
     if (currentStep < steps.length - 1) {
-      if (currentStep === steps.length - 2) {
-        await form.handleSubmit(onSubmit)();
-      }
       setCurrentStep((step) => step + 1);
     }
   };
@@ -147,6 +152,75 @@ export const CreatePlaceWithNotification: React.FC<ProfileFormType> = ({
       setCurrentStep((step) => step - 1);
     }
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleNotificationChange = (
+    index: number,
+    field: string,
+    value: string
+  ) => {
+    const updatedNotifications = formData.notifications.map((notif, i) =>
+      i === index ? { ...notif, [field]: value } : notif
+    );
+    setFormData({ ...formData, notifications: updatedNotifications });
+  };
+
+  const addNotification = () => {
+    setFormData({
+      ...formData,
+      notifications: [
+        ...formData.notifications,
+        {
+          satellite: "",
+          notifyBefore: "",
+          notifyIn: "",
+          smsNumber: "",
+          email: "",
+        },
+      ],
+    });
+  };
+
+  const removeNotification = (index: number) => {
+    setFormData({
+      ...formData,
+      notifications: formData.notifications.filter((_, i) => i !== index),
+    });
+  };
+
+  const {toast} = useToast();
+
+  const onSubmit = async () => {
+    try {
+      setLoading(true);
+      addUpdatePlace()
+      toast({
+        title: "Place added successfully!",  
+      });
+      console.log("Submitted Data:", formData);
+      // Handle submission logic
+    } catch (error) {
+      console.error("Submission Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const steps = [
+    {
+      id: "Step 1",
+      name: "Place Information",
+    },
+    {
+      id: "Step 2",
+      name: "Set up Notifications",
+    },
+    { id: "Step 3", name: "Complete" },
+  ];
 
   return (
     <>
@@ -158,7 +232,7 @@ export const CreatePlaceWithNotification: React.FC<ProfileFormType> = ({
             variant="destructive"
             size="sm"
             onClick={() => {
-              /* Handle delete */
+              console.log("Delete Place");
             }}
           >
             <Trash2 className="h-4 w-4" />
@@ -167,24 +241,19 @@ export const CreatePlaceWithNotification: React.FC<ProfileFormType> = ({
       </div>
       <Separator />
       <div>
-        <ul className="flex gap-4">
+        <ul className="flex gap-4 overflow-x-auto">
           {steps.map((step, index) => (
-            <li key={step.name} className="md:flex-1">
+            <li key={step.id} className="flex-1">
               <div
                 className={cn(
-                  "flex w-full flex-col border-l-4 py-2 pl-4 md:border-l-0 md:border-t-4 md:pb-0 md:pl-0 md:pt-4",
-                  currentStep > index
-                    ? "border-sky-600"
-                    : currentStep === index
-                    ? "border-sky-600"
-                    : "border-gray-200",
+                  "flex flex-col items-start border-l-4 py-2 pl-4",
+                  currentStep === index ? "border-sky-600" : "border-gray-200"
                 )}
-                aria-current={currentStep === index ? "step" : undefined}
               >
                 <span
                   className={cn(
                     "text-sm font-medium",
-                    currentStep >= index ? "text-sky-600" : "text-gray-500",
+                    currentStep >= index ? "text-sky-600" : "text-gray-500"
                   )}
                 >
                   {step.id}
@@ -196,317 +265,237 @@ export const CreatePlaceWithNotification: React.FC<ProfileFormType> = ({
         </ul>
       </div>
       <Separator />
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-8 w-full"
-        >
-          <div
-            className={cn(
-              currentStep === 1
-                ? "md:inline-block w-full"
-                : "md:grid md:grid-cols-3 gap-8",
-            )}
-          >
-            {currentStep === 0 && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Place Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          disabled={loading}
-                          placeholder="Dhaka"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="latitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Latitude</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Latitude"
-                          disabled={loading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="longitude"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Longitude</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="Longitude"
-                          disabled={loading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="geojson"
-                  render={({ field }) => (
-                    <FormItem className="col-span-3">
-                      <FormLabel>Select Area on Map</FormLabel>
-                      <FormControl>
-                        <MapSelection
-                          onGeoJSONChange={(geojson) => {
-                            field.onChange(geojson);
-                          }}
-                          onLatLongChange={(lat, long) => {
-                            form.setValue("latitude", lat.toFixed(6));
-                            form.setValue("longitude", long.toFixed(6));
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
-            {currentStep === 1 && (
-              <>
-                {fields.map((field, index) => (
-                  <Accordion
-                    type="single"
-                    collapsible
-                    defaultValue="item-1"
-                    key={field.id}
-                  >
-                    <AccordionItem value="item-1">
-                      <AccordionTrigger
-                        className={cn(
-                          "[&[data-state=closed]>button]:hidden [&[data-state=open]>.alert]:hidden relative !no-underline",
-                          errors?.notifications?.[index] && "text-red-700",
-                        )}
-                      >
-                        {`Set Notification ${index + 1}`}
-
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="absolute right-8"
-                          onClick={() => remove(index)}
-                          type="button"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        {errors?.notifications?.[index] && (
-                          <span className="absolute alert right-8">
-                            <AlertTriangle className="h-4 w-4 text-red-700" />
-                          </span>
-                        )}
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="md:grid md:grid-cols-3 gap-8 border p-4 rounded-md relative mb-4">
-                          <FormField
-                            control={form.control}
-                            name={`notifications.${index}.satelite`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Satellite</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                  disabled={loading}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select satellite" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="Landsat-8">
-                                      Landsat-8
-                                    </SelectItem>
-                                    <SelectItem value="Landsat-9">
-                                      Landsat-9
-                                    </SelectItem>
-                                    <SelectItem value="Sentinel 2">
-                                      Sentinel 2
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name={`notifications.${index}.notifyBefore`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Notify Before hour</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    type="number"
-                                    disabled={loading}
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name={`notifications.${index}.notifyIn`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Notify In</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                  disabled={loading}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select notification method" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="sms">SMS</SelectItem>
-                                    <SelectItem value="email">Email</SelectItem>
-                                    <SelectItem value="in-app">
-                                      In-App
-                                    </SelectItem>
-                                    <SelectItem value="all">All</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {(form.watch(`notifications.${index}.notifyIn`) ===
-                            "sms" ||
-                            form.watch(`notifications.${index}.notifyIn`) ===
-                              "all") && (
-                            <FormField
-                              control={form.control}
-                              name={`notifications.${index}.smsNumber`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>SMS Number</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="tel"
-                                      disabled={loading}
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          )}
-
-                          {(form.watch(`notifications.${index}.notifyIn`) ===
-                            "email" ||
-                            form.watch(`notifications.${index}.notifyIn`) ===
-                              "all") && (
-                            <FormField
-                              control={form.control}
-                              name={`notifications.${index}.email`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Email</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="email"
-                                      disabled={loading}
-                                      {...field}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          )}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                ))}
-
-                <div className="flex justify-center mt-4">
-                  <Button
-                    type="button"
-                    className="flex justify-center"
-                    size="lg"
-                    onClick={() =>
-                      append({
-                        satelite: "",
-                        notifyBefore: "",
-                        notifyIn: "",
-                        smsNumber: "",
-                        email: "",
-                      })
-                    }
-                  >
-                    Add More Notification
-                  </Button>
-                </div>
-              </>
-            )}
-            {currentStep === 2 && (
+      <div className="space-y-8 w-full">
+        <div className={cn("w-full", currentStep === 1 ? "block" : "grid")}>
+          {currentStep === 0 && (
+            <>
               <div>
-                <h1>Completed</h1>
-                <pre className="whitespace-pre-wrap">
-                  {JSON.stringify(data, null, 2)}
-                </pre>
+                <label>Place Name</label>
+                <Input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  disabled={loading}
+                  placeholder="Dhaka"
+                />
               </div>
-            )}
-          </div>
 
-          <div className="mt-8 pt-5">
-            <div className="flex justify-between">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label>Latitude</label>
+                  <Input
+                    name="latitude"
+                    type="number"
+                    value={formData.latitude}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                    placeholder="Latitude"
+                  />
+                </div>
+
+                <div>
+                  <label>Longitude</label>
+                  <Input
+                    name="longitude"
+                    type="number"
+                    value={formData.longitude}
+                    onChange={handleInputChange}
+                    disabled={loading}
+                    placeholder="Longitude"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label>Select Area on Map</label>
+                <MapSelection 
+                  onLatLongChange={(lat, long, geojson) => {
+                    setFormData({
+                      ...formData,
+                      latitude: lat.toFixed(6),
+                      longitude: long.toFixed(6),
+                      geojson,
+                    });
+                  }}
+                  initialGeoJSON={formData.geojson}
+                />
+              </div>
+            </>
+          )}
+
+          {currentStep === 1 && (
+            <>
+              {formData.notifications.map((notification, index) => (
+                <Accordion
+                  type="single"
+                  collapsible
+                  key={index}
+                  className="mb-4"
+                >
+                  <AccordionItem value={`item-${index}`}>
+                    <AccordionTrigger>
+                      <span>{`Set Notification ${index + 1}`}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeNotification(index);
+                        }}
+                        type="button"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border rounded-md">
+                        <div>
+                          <label>Satellite</label>
+                          <Select
+                            value={notification.satellite}
+                            onValueChange={(value) =>
+                              handleNotificationChange(index, "satellite", value)
+                            }
+                            disabled={loading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select satellite" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Landsat-8">Landsat-8</SelectItem>
+                              <SelectItem value="Landsat-9">Landsat-9</SelectItem>
+                              <SelectItem value="Sentinel 2">
+                                Sentinel 2
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label>Notify Before (Hours)</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={notification.notifyBefore}
+                            onChange={(e) =>
+                              handleNotificationChange(
+                                index,
+                                "notifyBefore",
+                                e.target.value
+                              )
+                            }
+                            disabled={loading}
+                          />
+                        </div>
+
+                        <div>
+                          <label>Notify In</label>
+                          <Select
+                            value={notification.notifyIn}
+                            onValueChange={(value) =>
+                              handleNotificationChange(index, "notifyIn", value)
+                            }
+                            disabled={loading}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select method" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sms">SMS</SelectItem>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="in-app">In-App</SelectItem>
+                              <SelectItem value="all">All</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {["sms", "all"].includes(notification.notifyIn) && (
+                          <div>
+                            <label>SMS Number</label>
+                            <Input
+                              type="tel"
+                              value={notification.smsNumber}
+                              onChange={(e) =>
+                                handleNotificationChange(
+                                  index,
+                                  "smsNumber",
+                                  e.target.value
+                                )
+                              }
+                              disabled={loading}
+                              placeholder="+1234567890"
+                            />
+                          </div>
+                        )}
+
+                        {["email", "all"].includes(notification.notifyIn) && (
+                          <div>
+                            <label>Email</label>
+                            <Input
+                              type="email"
+                              value={notification.email}
+                              onChange={(e) =>
+                                handleNotificationChange(index, "email", e.target.value)
+                              }
+                              disabled={loading}
+                              placeholder="example@domain.com"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              ))}
+
               <Button
                 type="button"
-                onClick={prev}
-                disabled={currentStep === 0}
-                variant="outline"
+                className="flex items-center"
+                size="lg"
+                onClick={addNotification}
+                disabled={loading}
               >
-                Previous
+                Add More Notification
               </Button>
-              <Button
-                type="button"
-                onClick={next}
-                disabled={currentStep === steps.length - 1}
-              >
-                {currentStep === steps.length - 2 ? "Submit" : "Next"}
-              </Button>
+            </>
+          )}
+
+          {currentStep === 2 && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+              <h2 className="text-lg font-semibold text-green-700 mb-2">
+                Compiled Successfully!
+              </h2>
+              <DataDisplay formData={formData} />
             </div>
-          </div>
-        </form>
-      </Form>
+          )}
+        </div>
+
+        <div className="flex justify-between mt-8">
+          <Button
+            type="button"
+            onClick={prev}
+            disabled={currentStep === 0 || loading}
+            variant="outline"
+          >
+            Previous
+          </Button>
+          {currentStep < steps.length - 1 && (
+            <Button
+              type="button"
+              onClick={next}
+              disabled={loading}
+              variant="primary"
+            >
+              Next
+            </Button>
+          )}
+          {currentStep === steps.length - 1 && (
+            <Button type="button" onClick={onSubmit} disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
+            </Button>
+          )}
+        </div>
+      </div>
     </>
   );
 };

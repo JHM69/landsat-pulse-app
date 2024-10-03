@@ -1,17 +1,25 @@
 
 import * as z from "zod";
 
+
+const geojsonSchema = z.object({
+  type: z.literal("Feature"),
+  properties: z.object({}).optional(),
+  geometry: z.object({
+    type: z.string(),
+    coordinates: z.any(), // Adjust based on your specific geometry requirements
+  }),
+});
+
+
 export const placeSchema = z.object({
+  id : z.number().nullable(),
   name : z.string(),
   latitude: z.string(),
   longitude: z.string(),
-  geojson: z.object({
-    type: z.string(),
-    features: z.array(z.any()),
-  }).nullable(),
-
+  geojson: z.any(),
   notifications : z.object({
-    satelite : z.string(),
+    satellite : z.string(),
     notifyBefore: z.number(),
     notifyIn : z.string(),
     smsNumber : z.string(),

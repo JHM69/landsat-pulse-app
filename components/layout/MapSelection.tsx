@@ -5,8 +5,8 @@ import * as turf from '@turf/turf';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
-const MapSelection = ({ onGeoJSONChange, onLatLongChange }) => {
-  const [geoJSON, setGeoJSON] = useState(null);
+const MapSelection = ({onLatLongChange, initialGeoJSON }) => {
+  const [geoJSON, setGeoJSON] = useState(initialGeoJSON || null);  // Handle initial geoJSON state
   const mapRef = useRef(null);
 
   const handleCreated = (e) => {
@@ -16,22 +16,20 @@ const MapSelection = ({ onGeoJSONChange, onLatLongChange }) => {
 
     // Calculate center of the drawn shape
     const center = turf.center(newGeoJSON);
-    const [longitude, latitude] = center.geometry.coordinates;
-
-    // Update the form with new values
-    onGeoJSONChange(newGeoJSON);
-    onLatLongChange(latitude, longitude);
+    const [longitude, latitude] = center.geometry.coordinates; 
+    // Update the form with new values 
+    onLatLongChange(latitude, longitude, newGeoJSON);
 
     // Optionally, update map view to center on the selection
     if (mapRef.current) {
-      mapRef.current.setView([latitude, longitude]);
+      mapRef.current.setView([latitude, longitude], mapRef.current.getZoom());
     }
   };
 
   return (
     <div className="h-[400px] w-full">
       <MapContainer 
-        center={[23.8103, 90.4125]} 
+        center={[23.8103, 90.4125]} // Initial center coordinates
         zoom={10} 
         style={{ height: '100%', width: '100%' }}
         ref={mapRef}

@@ -160,11 +160,10 @@ model Notification {
   userId       Int
   overpass     LandsatOverpass?   @relation(fields: [overpassId], references: [id])
   overpassId   Int?
-  method       NotificationMethod
-  leadTime     Int // Lead time in days
+  leadTime     Int? // Lead time in days
   isSent       Boolean            @default(false)
   sentAt       DateTime?
-  stelite      String?
+  satellite    String?
   read         Boolean            @default(false)
   notifyBefore Int                @default(1) // Notify before overpass in hours
   notifyIn     String             @default("EMAIL,SMS,IN_APP, ALL")
