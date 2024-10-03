@@ -1,0 +1,196 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  passwordHash       String?
+  name               String?
+  image              String?
+  emailVerified      DateTime?
+  socketId           String?
+  role               UserRole            @default(USER)
+  preferences        UserPreferences?
+  notifications      Notification[]
+  locations          Location[]
+  groundMeasurements GroundMeasurement[]
+  validations        DataValidation[]    @relation("Validator")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  accounts           Account[]
+  sessions           Session[]
+
+  @@index([email])
+}
+
+model UserPreferences {
+  id                   Int      @id @default(autoincrement())
+  user                 User     @relation(fields: [userId], references: [id])
+  userId               Int      @unique
+  cloudCoverThreshold  Float    @default(15.0)
+  notificationMethods  String // e.g., "EMAIL,SMS,IN_APP"
+  notificationLeadTime Int      @default(1) // Lead time in days
+  timeSpan             Int      @default(30) // Time span in days
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Location {
+  id            Int                 @id @default(autoincrement())
+  name          String?
+  latitude      Float
+  longitude     Float
+  user          User                @relation(fields: [userId], references: [id])
+  userId        Int
+  overpasses    LandsatOverpass[]
+  geojson       Json?
+  measurements  GroundMeasurement[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  notifications Notification[]
+
+  @@index([latitude, longitude])
+  @@index([userId])
+}
+
+model LandsatOverpass {
+  id            Int              @id @default(autoincrement())
+  location      Location         @relation(fields: [locationId], references: [id])
+  locationId    Int
+  datetime      DateTime
+  satellite     String // "Landsat 8" or "Landsat 9"
+  path          Int
+  row           Int
+  cloudCover    Float?
+  sceneId       String?
+  data          LandsatData?
+  notifications Notification[]
+  validations   DataValidation[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([datetime])
+}
+
+model LandsatData {
+  id          Int              @id @default(autoincrement())
+  overpass    LandsatOverpass  @relation(fields: [overpassId], references: [id])
+  overpassId  Int              @unique
+  dataUrl     String
+  metadata    Json
+  srValues    Json // Surface Reflectance values
+  validations DataValidation[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model GroundMeasurement {
+  id           Int              @id @default(autoincrement())
+  user         User             @relation(fields: [userId], references: [id])
+  userId       Int
+  location     Location         @relation(fields: [locationId], references: [id])
+  locationId   Int
+  datetime     DateTime
+  measurements Json // Ground-based spectral measurements
+  notes        String?
+  validations  DataValidation[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([datetime])
+}
+
+model DataValidation {
+  id                  Int               @id @default(autoincrement())
+  landsatData         LandsatData       @relation(fields: [landsatDataId], references: [id])
+  landsatDataId       Int
+  groundMeasurement   GroundMeasurement @relation(fields: [groundMeasurementId], references: [id])
+  groundMeasurementId Int
+  validator           User              @relation(name: "Validator", fields: [validatorId], references: [id])
+  validatorId         Int
+  validationDate      DateTime          @default(now())
+  validationResult    ValidationResult
+  comments            String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  LandsatOverpass     LandsatOverpass?  @relation(fields: [landsatOverpassId], references: [id])
+  landsatOverpassId   Int?
+}
+
+model Notification {
+  id           Int                @id @default(autoincrement())
+  user         User               @relation(fields: [userId], references: [id])
+  userId       Int
+  overpass     LandsatOverpass?   @relation(fields: [overpassId], references: [id])
+  overpassId   Int?
+  method       NotificationMethod
+  leadTime     Int // Lead time in days
+  isSent       Boolean            @default(false)
+  sentAt       DateTime?
+  stelite      String?
+  read         Boolean            @default(false)
+  notifyBefore Int                @default(1) // Notify before overpass in hours
+  notifyIn     String             @default("EMAIL,SMS,IN_APP, ALL")
+  smsNumber    String?
+  email        String?
+  completed    Boolean            @default(false)
+  locations    Location[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+enum UserRole {
+  USER
+  EXPERT
+  ADMIN
+}
+
+enum NotificationMethod {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum ValidationResult {
+  VALID
+  INVALID
+  PARTIALLY_VALID
+  PENDING
+}

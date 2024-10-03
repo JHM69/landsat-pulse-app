@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground box-border;
+  }
+}
+
+@layer utilities {
+  .min-h-screen {
+    min-height: 100vh; /* Fallback */
+    min-height: 100dvh;
+  }
+  .h-screen {
+    height: 100vh; /* Fallback */
+    height: 100dvh;
+  }
+}
+
+
+/* Custom dark mode scrollbar styles */
+.scroll-container::-webkit-scrollbar {
+  height: 8px; /* height of the horizontal scrollbar */
+  background-color: #2c2c2c; /* darker color for the scrollbar track */
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: #4b4b4b; /* darker yet visible color for the scrollbar thumb */
+  border-radius: 7px; /* rounded corners on the scrollbar thumb */
+}
+
+.scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #686868; /* slightly lighter color on hover for better interaction feedback */
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-rotate {
+  animation: rotate 8s linear infinite;
+}
+
+.animate-fade {
+  animation: fadeInOut 3s ease-in-out infinite;
+}
+
+
+/* styles.css */
+:root {
+  --scrollbar-thumb-color: rgba(128, 128, 128, 0.6); /* Light gray for light mode */
+  --scrollbar-thumb-hover-color: rgba(128, 128, 128, 0.8); /* Darker gray for hover in light mode */
+  --scrollbar-thumb-border-radius: 12px; /* Rounded corners */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --scrollbar-thumb-color: rgba(200, 200, 200, 0.3); /* Lighter gray for dark mode */
+    --scrollbar-thumb-hover-color: rgba(200, 200, 200, 0.5); /* Slightly darker for hover in dark mode */
+  }
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: var(--scrollbar-thumb-color) transparent; /* For Firefox */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* Width of the scrollbar */
+  height: 6px; /* Height of the scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Background of the scrollbar track */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-color); /* Color of the scrollbar thumb */
+  border-radius: var(--scrollbar-thumb-border-radius); /* Rounded corners of the scrollbar thumb */
+  border: 2px solid transparent; /* Space around the scrollbar thumb */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover-color); /* Color of the scrollbar thumb on hover */
+}
+
+
+ 
