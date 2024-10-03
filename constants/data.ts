@@ -77,6 +77,27 @@ export const navItems: NavItem[] = [
     icon: "settings",
     label: "settings",
   }, 
+
+  {
+    title: "Block",
+    href: "/dashboard/block",
+    icon: "scan",
+    label: "block",
+  }, 
+
+  {
+    title: "Shape",
+    href: "/dashboard/shape",
+    icon: "pentagon",
+    label: "shape",
+  }, 
+
+  {
+    title: "Landsat Map",
+    href: "/dashboard/landsatmap",
+    icon: "map",
+    label: "landsat map",
+  }, 
  
 ];
 
