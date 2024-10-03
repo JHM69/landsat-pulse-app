@@ -3,8 +3,10 @@ import geemap
 import ee
 import urllib.parse
 import json
+import os
 
 app = Flask(__name__)
+os.environ['EARTHENGINE_CREDENTIALS'] = '/ee_credentials'
 ee.Initialize()
 
 @app.route('/')
