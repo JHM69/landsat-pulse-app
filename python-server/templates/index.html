@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landsat Image Viewer</title>
+    <script>
+        async function fetchLandsat() {
+            const response = await fetch('/api/landsat');
+            const result = await response.json();
+            alert(result.message);
+            // Load the generated map (you might want to use an iframe or similar to show it)
+            window.open(result.html_file, '_blank');
+        }
+    </script>
+</head>
+<body>
+    <h1>Landsat Image Viewer</h1>
+    <button onclick="fetchLandsat()">Show Landsat Image</button>
+</body>
+</html>
