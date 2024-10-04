@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 // import million from 'million/compiler';
 const nextConfig = {
+ 
   async headers() {
     return [
       {

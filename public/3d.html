@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.81/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.81/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.js"></script>
+    <link href="style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- <div id="loading">
+      <h1>Loading...</h1>
+    </div> -->
+    <div id="cesiumContainer"></div>
+    <script>
+      async function main() {
+        const Landsat8_id = 39084;
+        const Landsat9_id = 49260;
+
+        const viewer = new Cesium.Viewer("cesiumContainer", {
+          imageryProvider: new Cesium.TileMapServiceImageryProvider({
+            url: Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
+          }),
+          baseLayerPicker: false,
+          geocoder: false,
+          homeButton: false,
+          infoBox: false,
+          navigationHelpButton: false,
+          sceneModePicker: false,
+          infoBox: true,
+        });
+        // viewer.scene.globe.enableLighting = true; // Day night effect
+
+        const landsat8_tle = await getTle(Landsat8_id);
+        const landsat9_tle = await getTle(Landsat9_id);
+
+        const landsat8_timeline = getSatelliteTimeline(landsat8_tle, 7, viewer);
+        const landsat9_timeline = getSatelliteTimeline(landsat9_tle, 7, viewer);
+
+        const landsat8_marker = viewer.entities.add({
+          position: landsat8_timeline,
+          billboard: {
+            image: "/landsat8.png",
+            scale: 0.08,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          },
+          name: "Landsat 8", // Add a name for the satellite
+          description: `
+            <h2>Landsat 8</h2>
+            <p><strong>Launch Date:</strong> February 11, 2013</p>
+            <img src='/landsat8.png' alt='Landsat 8 Satellite' style='width: 150px; height: auto;'>
+            <p><strong>Orbit Type:</strong> Sun-synchronous</p>
+            <p><strong>Altitude:</strong> 705 km</p>
+            <p><strong>Speed:</strong> 7.5 km/s</p>
+            <p><strong>Resolution:</strong> 30 m</p>
+            `,
+          path: {
+            resolution: 512, // Higher value will make the path smoother
+            material: new Cesium.PolylineGlowMaterialProperty({
+              glowPower: 0.5,
+              color: Cesium.Color.RED,
+            }),
+            width: 5,
+            leadTime: 0 * 60,
+            trailTime: 60 * 60,
+          },
+        });
+
+        const landsat9_marker = viewer.entities.add({
+          position: landsat9_timeline,
+          billboard: {
+            image: "/landsat9.png",
+            scale: 0.1,
+            horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+            verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          },
+          name: "Landsat 9", // Add a name for the satellite
+          description: `
+            <h2>Landsat 9</h2>
+            <p><strong>Launch Date:</strong> September 27, 2021</p>
+            <img src='/landsat9.png' alt='Landsat 9 Satellite' style='width: 150px; height: auto;'>
+            <p><strong>Orbit Type:</strong> Sun-synchronous</p>
+            <p><strong>Altitude:</strong> 705 km</p>
+            <p><strong>Speed:</strong> 7.5 km/s</p>
+            <p><strong>Resolution:</strong> 30 m</p>
+            `,
+
+          path: {
+            resolution: 512, // Increase for smoother orbit line
+            material: new Cesium.PolylineGlowMaterialProperty({
+              glowPower: 0.5,
+              color: Cesium.Color.GREEN,
+            }),
+            width: 5,
+            leadTime: 0 * 60,
+            trailTime: 60 * 60,
+          },
+        });
+
+        // viewer.trackedEntity = landsat9_marker; // Track Landsat 9
+
+        let initialized = false; // show loading screen until all tiles are loaded
+        viewer.scene.globe.tileLoadProgressEvent.addEventListener(() => {
+          if (!initialized && viewer.scene.globe.tilesLoaded === true) {
+            viewer.clock.shouldAnimate = true;
+            initialized = true;
+            // viewer.scene.camera.zoomOut(7000000);
+            // document
+            //   .querySelector("#loading")
+            //   .classList.toggle("disappear", true);
+          }
+        });
+      }
+
+      function getTle(id) {
+        return fetch(
+          `https://celestrak.org/NORAD/elements/gp.php?CATNR=${id}&FORMAT=TLE`
+        )
+          .then((response) => response.text())
+          .then((data) => {
+            console.log(data);
+            const lines = data.trim().split("\n");
+            return satellite.twoline2satrec(lines[1].trim(), lines[2].trim());
+          });
+      }
+
+      function getSatelliteTimeline(tle, days, viewer) {
+        const totalSeconds = days * 24 * 60 * 60; // future position in n days
+        const timestepInSeconds = 10;
+        const start = Cesium.JulianDate.fromDate(new Date());
+        const stop = Cesium.JulianDate.addSeconds(
+          start,
+          totalSeconds,
+          new Cesium.JulianDate()
+        );
+        viewer.clock.startTime = start.clone();
+        viewer.clock.stopTime = stop.clone();
+        viewer.clock.currentTime = start.clone();
+        viewer.timeline.zoomTo(start, stop);
+        viewer.clock.multiplier = 1;
+        viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP;
+
+        const satelliteTimeline = new Cesium.SampledPositionProperty();
+
+        for (let i = 0; i < totalSeconds; i += timestepInSeconds) {
+          const time = Cesium.JulianDate.addSeconds(
+            start,
+            i,
+            new Cesium.JulianDate()
+          );
+          const jsDate = Cesium.JulianDate.toDate(time);
+
+          const positionAndVelocity = satellite.propagate(tle, jsDate);
+          const gmst = satellite.gstime(jsDate);
+          const p = satellite.eciToGeodetic(positionAndVelocity.position, gmst);
+
+          const position = Cesium.Cartesian3.fromRadians(
+            p.longitude,
+            p.latitude,
+            p.height * 1000
+          );
+          satelliteTimeline.addSample(time, position);
+        }
+
+        return satelliteTimeline;
+      }
+
+      main();
+    </script>
+  </body>
+</html>

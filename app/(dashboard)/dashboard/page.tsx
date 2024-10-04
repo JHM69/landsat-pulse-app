@@ -14,14 +14,11 @@ import {
 import { addDays } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
 
-import { DateRange } from "react-day-picker";
-import { ListChecksIcon, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { TimeRangeSelector } from "@/components/ui/time-select";
-import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import WorldMap from "@/components/WorldMap";
+import { DateRange } from "react-day-picker";  
+import { Slider } from "@/components/ui/slider";
+import { useSearchParams, usePathname, useRouter } from "next/navigation"; 
 
-export default function page() {
+export default function Page() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -32,145 +29,175 @@ export default function page() {
     return isNaN(date.getTime()) ? undefined : date;
   };
 
-  const [activeStock, setActiveStock] = useState<string>(
-    searchParams.get("symbol") || "All Stocks",
-  );
   const [selectedOption, setSelectedOption] = useState(
-    searchParams.get("env") || "landsat-9",
+    searchParams.get("landsat") || "landsat-9"
   );
-  const [tabStocks, setTabStocks] = useState<string[]>(["All Stocks"]);
-  const [start_hh, setStartHH] = useState(
-    parseInt(searchParams.get("start_hh") || "9"),
-  );
-  const [start_mm, setStartMM] = useState(
-    parseInt(searchParams.get("start_mm") || "30"),
-  );
-  const [end_hh, setEndHH] = useState(
-    parseInt(searchParams.get("end_hh") || "16"),
-  );
-  const [end_mm, setEndMM] = useState(
-    parseInt(searchParams.get("end_mm") || "0"),
-  );
+
   const [date, setDate] = useState<DateRange>(() => {
     const fromDate = parseDate(searchParams.get("from"));
     const toDate = parseDate(searchParams.get("to"));
     return {
-      from: fromDate || new Date(),
+      from: fromDate ||  addDays(new Date(), -30),
       to: toDate || addDays(new Date(), 0),
     };
   });
 
+  const [lat, setLat] = useState(searchParams.get("lat") || "0");
+  const [lon, setLon] = useState(searchParams.get("lon") || "0");
+  const [cloud, setCloud] = useState(parseInt(searchParams.get("cloud") || "20"));
+
+  const [iframeLoading, setIframeLoading] = useState(false);
+  
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+
   const updateURL = useCallback(() => {
     const params = new URLSearchParams(searchParams);
-    params.set("from", date?.from?.toISOString() || "");
-    params.set("to", date?.to?.toISOString() || "");
-    params.set("start_hh", start_hh.toString());
-    params.set("start_mm", start_mm.toString());
-    params.set("end_hh", end_hh.toString());
-    params.set("end_mm", end_mm.toString());
+    params.set("start_date", date?.from?.toISOString() || "");
+    params.set("end_date", date?.to?.toISOString() || "");
+    params.set("cloud", cloud.toString());
+    params.set("lat", lat);
+    params.set("lon", lon);
+    params.set("landsat", selectedOption);
+
     router.push(`${pathname}?${params.toString()}`);
-  }, [
-    pathname,
-    router,
-    searchParams,
-    date,
-    start_hh,
-    start_mm,
-    end_hh,
-    end_mm,
-  ]);
+  }, [date, lat, lon, selectedOption, router, pathname, cloud, searchParams]);
 
   useEffect(() => {
     updateURL();
   }, [updateURL]);
 
-  const { data, status, refetch } = trpc.getDashboard.useQuery({
-    from: date?.from?.toISOString() ?? "",
-    to: date?.to?.toISOString() ?? "",
-    symbol: activeStock,
-    start_hh,
-    start_mm,
-    end_hh,
-    end_mm,
-    env: selectedOption,
-  });
+  // New useEffect to fetch user's geolocation
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsFetchingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLat(latitude.toString());
+        setLon(longitude.toString());
+        setIsFetchingLocation(false);
+      },
+      (error) => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationError("User denied the request for Geolocation.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocationError("Location information is unavailable.");
+            break;
+          case error.TIMEOUT:
+            setLocationError("The request to get user location timed out.");
+            break;
+          default:
+            setLocationError("An unknown error occurred.");
+            break;
+        }
+        setIsFetchingLocation(false);
+      }
+    );
+  }, []);
 
   const handleSelect = useCallback((value: string) => {
     setSelectedOption(value);
   }, []);
 
-  const handleStartTimeChange = useCallback(
-    (newTime: { hour: number; minute: number }) => {
-      setStartHH(newTime.hour);
-      setStartMM(newTime.minute);
-    },
-    [],
-  );
-
-  const handleEndTimeChange = useCallback(
-    (newTime: { hour: number; minute: number }) => {
-      setEndHH(newTime.hour);
-      setEndMM(newTime.minute);
-    },
-    [],
-  );
-
   const handleDateChange = useCallback((newDateRange: DateRange) => {
     setDate(newDateRange);
   }, []);
 
-  useEffect(() => {
-    if (status === "success") {
-    }
-  }, [status, data, activeStock]);
+  const handleIframeLoad = () => {
+    setIframeLoading(false);
+  };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refetch();
-    }, 60000);
+  const handleIframeRender = () => {
+    return (
+      <iframe
+        src={`${process.env.NEXT_PUBLIC_PYTHON_URL}/api/landsat?cloud=${cloud}&lat=${lat}&lon=${lon}&landsat=${selectedOption}&start_date=${date?.from?.toISOString()}&end_date=${date?.to?.toISOString()}`}
+        className="w-full h-full"
+        title="Landsat Map"
+        style={{ height: "640px" }}
+        // onLoad={handleIframeLoad}
+      ></iframe>
+    );
+  };
 
-    return () => clearTimeout(timer);
-  }, [refetch]);
+  useState(() => {
+    handleIframeRender();
+  }, [cloud, lat, lon, selectedOption, date]);
 
   return (
-    <div className="relative"> 
-      <WorldMap />
-      
-      <ScrollArea className="relative z-10 h-full"> 
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-          <div className="flex items-center justify-between space-y-1">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div className="flex items-center gap-5 mb-4 md:mb-0">
-                <div className="pl-1"> 
-                  <p className="text-3xl font-semibold text-blue-600"></p>
-                </div> 
-              </div>
-            </div>
-  
-            <div className="hidden md:flex items-center space-x-2">
-              <CalendarDateRangePicker defaultDate={date} onDateChange={handleDateChange} />
-              <TimeRangeSelector 
-                startTime={{ hour: start_hh, minute: start_mm }}
-                endTime={{ hour: end_hh, minute: end_mm }}
-                onStartTimeChange={handleStartTimeChange}
-                onEndTimeChange={handleEndTimeChange}
+    <div className="relative">
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-1"> 
+          <div className="hidden md:flex items-center space-x-2">
+            <CalendarDateRangePicker defaultDate={date} onDateChange={handleDateChange} />
+
+            <div className="w-[110px] flex items-center space-x-2">
+              <Slider
+                value={[cloud]}
+                onValueChange={(val) => setCloud(val[0])}
+                min={1}
+                max={100}
+                className="w-[100px]"
               />
-              <div className="w-[110px] flex items-center space-x-2">
-                <Select value={selectedOption} onValueChange={handleSelect}>
-                  <SelectTrigger>
-                    <span>{selectedOption}</span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="landsat-9">Landsat 9</SelectItem>
-                    <SelectItem value="landsat-8">Landsat 8</SelectItem>
-                    <SelectItem value="sentinel">Sentinel 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <span>{cloud}%</span>
             </div>
+
+            <div className="w-[110px] flex items-center space-x-2">
+              <Select value={selectedOption} onValueChange={handleSelect}>
+                <SelectTrigger>
+                  <span>{selectedOption}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="landsat-9">Landsat 9</SelectItem>
+                  <SelectItem value="landsat-8">Landsat 8</SelectItem>
+                  <SelectItem value="sentinel">Sentinel 2</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <input
+              type="text"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              placeholder="Latitude"
+              className="border rounded px-2 py-1"
+            />
+            <input
+              type="text"
+              value={lon}
+              onChange={(e) => setLon(e.target.value)}
+              placeholder="Longitude"
+              className="border rounded px-2 py-1"
+            />
           </div>
         </div>
-      </ScrollArea>
+
+        {/* Optional: Show location fetching status or errors */}
+        <div className="mb-4">
+          {isFetchingLocation && (
+            <p className="text-gray-500">Fetching your location...</p>
+          )}
+          {locationError && (
+            <p className="text-red-500">Error: {locationError}</p>
+          )}
+        </div>
+
+        <div className="mt-8">
+          {iframeLoading ? (
+            <p>Loading map...</p>
+          ) : (
+         handleIframeRender()
+          )}
+          
+        </div>
+      </div>
     </div>
   );
 }

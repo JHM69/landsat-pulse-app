@@ -14,6 +14,9 @@ const notificationRouter = t.router({
         orderBy: {
           createdAt: "desc",
         },
+        include: {
+          locations: true,
+        },
         take: input.limit || 10, // Default limit to 10 if not provided
       });
 

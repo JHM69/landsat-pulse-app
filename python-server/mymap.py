@@ -4,6 +4,7 @@ import ee
 import urllib.parse
 import json
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 os.environ['EARTHENGINE_CREDENTIALS'] = '/ee_credentials'
@@ -24,28 +25,72 @@ def landsat_block():
 @app.route('/landsat-shape')
 def landsat_shape():
     return render_template('landsat_shape_map.html')
-
-
-
+ 
+def format_date(date_str):
+    try:
+        # Parse the date string to a datetime object
+        date_obj = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%fZ')
+        # Format the datetime object back to a string in the desired format
+        return date_obj.strftime('%Y-%m-%d')
+    except ValueError:
+        # If parsing fails, return a default date
+        return '2024-01-01'
 
 @app.route('/api/landsat')
 def get_landsat_image():
 
     cloud = request.args.get('cloud', default=20, type=int)
-    lat = request.args.get('lat', default=38.9275, type=float)
-    lon = request.args.get('lon', default=-114.2579, type=float)
+    
+    lat = request.args.get('lat', default=23.8103, type=float)
+    lon = request.args.get('lon', default=90.4125, type=float)
 
-    # Load Landsat 8 and 9 Surface Reflectance datasets (Collection 2, Level 2)
-    landsat8 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2') \
-        .filterDate('2024-01-01', '2024-09-01') \
-        .filter(ee.Filter.lt('CLOUD_COVER', cloud))
+        
+    start_date = request.args.get('start_date', default='2024-01-01', type=str)
+    end_date = request.args.get('end_date', default='2024-09-01', type=str)
 
-    landsat9 = ee.ImageCollection('LANDSAT/LC09/C02/T1_L2') \
-        .filterDate('2024-01-01', '2024-09-01') \
+    print(f"Start Date: {start_date}")
+    print(f"End Date: {end_date}")
+
+    # Format the dates
+    start_date = format_date(start_date)
+    end_date = format_date(end_date)
+    
+    landsat = request.args.get('landsat', default='landsat-9', type=str)
+    
+    if landsat == 'landsat-8':
+        landsat = "LC08"
+    elif landsat == 'landsat-9':
+        landsat = "LC09"
+    else:
+        landsat = "LC09"
+
+    print(f"landsat: {landsat}")
+     
+    landsat = request.args.get('landsat', default='landsat-9', type=str)
+
+
+    print(f"Cloud: {cloud}")
+    print(f"Latitude: {lat}")
+    print(f"Longitude: {lon}")
+    print(f"Start Date: {start_date}")
+    print(f"End Date: {end_date}")
+    print(f"Landsat: {landsat}")
+
+    
+    if landsat == 'landsat-8':
+        landsat = "LC08"
+    elif landsat == 'landsat-9':
+        landsat = "LC09"
+    
+    # Load Landsat Surface Reflectance datasets (Collection 2, Level 2)
+    landsat_collection = f'LANDSAT/{landsat}/C02/T1_L2'
+    
+    landsat_images = ee.ImageCollection(landsat_collection) \
+        .filterDate(start_date, end_date) \
         .filter(ee.Filter.lt('CLOUD_COVER', cloud))
 
     # Combine Landsat 8 and 9
-    dataset = landsat8.merge(landsat9)
+    dataset =  landsat_images
 
     # Define the function to apply scale factors
     def apply_scale_factors(image):

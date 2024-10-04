@@ -139,10 +139,14 @@ export function Notifications() {
                     className={`text-sm ${
                       notification.read ? "text-gray-600" : "text-gray-900 font-medium"
                     }`}
-                    dangerouslySetInnerHTML={{ __html: notification.message }}
-                  />
+                   
+                  > 
+                   {
+                    notification.satellite
+                   } Alert is incoming via {notification.notifyIn} before {notification.notifyBefore} hours of you place {notification.locations[0].name}
+                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(notification.createdat).toLocaleString()}
+                    {new Date(notification.createdAt).toLocaleString()}
                   </p>
                 </div>
                 {!notification.read && (
