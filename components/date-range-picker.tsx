@@ -18,7 +18,11 @@ export function CalendarDateRangePicker({
     from: undefined,
     to: undefined,
   },
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: {
+  className?: string;
+  onDateChange?: (date: { from: Date | undefined; to: Date | undefined }) => void;
+  defaultDate?: { from?: Date; to?: Date };
+}) {
 
   const [date, setDate] = React.useState<any | undefined>({
     from: defaultDate.from || addDays(new Date(), 1),

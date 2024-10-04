@@ -1,13 +1,10 @@
+"use client"
 import { Metadata } from "next";
 import Link from "next/link";
 import UserAuthForm from "@/components/forms/user-auth-form";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-export const metadata: Metadata = {
-  title: "Authentication",
-  description: "Authentication forms built using the components.",
-};
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 export default function AuthenticationPage() {
   return (
@@ -38,6 +35,9 @@ export default function AuthenticationPage() {
           </svg>
           Landsat Pulse
         </div>
+        <div className="absolute inset-0 z-0">
+        <DotLottieReact src="land2.json" loop autoplay className="w-full h-full object-cover" />
+      </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
