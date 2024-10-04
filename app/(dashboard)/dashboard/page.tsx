@@ -61,7 +61,7 @@ export default function page() {
   });
 
   const updateURL = useCallback(() => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set("from", date?.from?.toISOString() || "");
     params.set("to", date?.to?.toISOString() || "");
     params.set("start_hh", start_hh.toString());
