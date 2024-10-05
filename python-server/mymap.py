@@ -104,7 +104,7 @@ def get_landsat_image():
     Map.addLayer(dataset, vis_params_true_color, 'True Color (Landsat 8-9)')
     Map.addLayer(dataset, vis_params_false_color, 'False Color (Landsat 8-9)')
     Map.addLayer(dataset.select('NDVI'), vis_params_ndvi, 'NDVI (Landsat 8-9)')
-    Map.addLayer(landcover, landcover_vis_params, 'Land Cover Classification')
+    # Map.addLayer(landcover, landcover_vis_params, 'Land Cover Classification')
 
     # Save the map as an HTML file
     map_html = 'templates/landsat_map.html'
