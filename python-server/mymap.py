@@ -7,8 +7,12 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-os.environ['EARTHENGINE_CREDENTIALS'] = '/ee_credentials'
-ee.Initialize()
+# os.environ['EARTHENGINE_CREDENTIALS'] = '/ee_credentials'
+# ee.Initialize()
+
+service_account = 'earth-engine-nodejs@nasa-space-app-436223.iam.gserviceaccount.com'
+credentials = ee.ServiceAccountCredentials(service_account, './servicekey.json')
+ee.Initialize(credentials)
 
 @app.route('/')
 def index():
@@ -56,41 +60,46 @@ def get_landsat_image():
     end_date = format_date(end_date)
     
     landsat = request.args.get('landsat', default='landsat-9', type=str)
+
+    both = False
     
     if landsat == 'landsat-8':
         landsat = "LC08"
     elif landsat == 'landsat-9':
         landsat = "LC09"
+    elif landsat == 'both':
+        both = True
+        landsat = "LC09"
     else:
         landsat = "LC09"
 
     print(f"landsat: {landsat}")
-     
-    landsat = request.args.get('landsat', default='landsat-9', type=str)
-
-
     print(f"Cloud: {cloud}")
     print(f"Latitude: {lat}")
     print(f"Longitude: {lon}")
     print(f"Start Date: {start_date}")
     print(f"End Date: {end_date}")
     print(f"Landsat: {landsat}")
-
-    
-    if landsat == 'landsat-8':
-        landsat = "LC08"
-    elif landsat == 'landsat-9':
-        landsat = "LC09"
     
     # Load Landsat Surface Reflectance datasets (Collection 2, Level 2)
-    landsat_collection = f'LANDSAT/{landsat}/C02/T1_L2'
-    
-    landsat_images = ee.ImageCollection(landsat_collection) \
-        .filterDate(start_date, end_date) \
-        .filter(ee.Filter.lt('CLOUD_COVER', cloud))
+    if both:
+        landsat8 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2') \
+            .filterDate(start_date, end_date) \
+            .filter(ee.Filter.lt('CLOUD_COVER', cloud))
 
-    # Combine Landsat 8 and 9
-    dataset =  landsat_images
+        landsat9 = ee.ImageCollection('LANDSAT/LC09/C02/T1_L2') \
+            .filterDate(start_date, end_date) \
+            .filter(ee.Filter.lt('CLOUD_COVER', cloud))
+
+        dataset = landsat8.merge(landsat9)
+    else:
+        landsat_collection = f'LANDSAT/{landsat}/C02/T1_L2'
+    
+        landsat_images = ee.ImageCollection(landsat_collection) \
+            .filterDate(start_date, end_date) \
+            .filter(ee.Filter.lt('CLOUD_COVER', cloud))
+        dataset =  landsat_images
+        
 
     # Define the function to apply scale factors
     def apply_scale_factors(image):

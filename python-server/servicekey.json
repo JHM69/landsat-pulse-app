@@ -1,0 +1,14 @@
+{
+    "type": "service_account",
+    "project_id": "nasa-space-app-436223",
+    "private_key_id": "b8504697307ef883042062339337f0239dc48406",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDbTlpCTA7wcVia\nrePO8iiynUnJTmc6wspoNyQpSNp1dgyTlv2U7PxlSKt09Zr59uavYbIvQr7jz9wC\nB2eWEdVnPcp6B6SzpHSxq0XWP80v3gzhMQnNTiCT01MqNv2orKnZX2cGtmRaRr6y\nmRWUTJFVSgqoDC0est4qLLtcEVZq8LY6B4hJczAvROg7XN3u/MCGk89r8u/iX4Hd\nH8FM2A3LB3PMx+yZxT9xkO2w02S7/RttYCfjVJYIS+nQFJk+6m9stjX5dCEB5l2X\nH2GcUL/IdCnnAlX7uKJaaOGliRbxktU7nNRW+4HxLttRFUSfZ1sxnRJAe9XV7ikK\nJct7NfE5AgMBAAECggEAE+4AKle2oNewHWhxlDAyDh9YogRvwamLkuJ19RGDltqa\nRHxbgaHywvKScE/UnGQ5bRVEB+L5LYNJg16wZXUr71SwdpwEtfWbTD0cHN8R8shr\nY7ic4y03LS/udh7muOIuEkzG9Fd1cbXNpTXfvekiaP2QT9rBa/GF2o/TnAeQUqnv\n2KfhPVHq1q6aSkfVcHabBycc7msk780xEF8oyrNpUxPKhUzj9IXcHIV1fTcqmett\nkv84aWACuaoGGNK5RkUxiXLdvLYKaqnneukCn65jXsLgtWTWqCfwTFjkiFBDPe+3\nWNvp3pdChQd3+J8XtWgJbAVf4cq1Z3FvcvhKFW2aAQKBgQDtZD1GfLWztlViFxwc\nmigrFXQDNiIs1JzLYJ2M/NTKcPNVA33zzUrfP1Aq8ogmhYt/JMjMkAfsuLie/Xe2\nhvpEI5GCVn5VHH/eupQbXeUqvAR1pZGZTbSAJs8HITinSDSRa1ZicWP6jpUR/qqL\nTAT/65zUdh3steBjJiBxcxIUOQKBgQDsfzCSyz1gl91rFqHujFTFrhGpx2ieZBk5\nJ2xv1FcJhJAful3fga8DpZX8c8Dob1/ZBdBupze5WNPf8IxEqvVeHli29ufzQqaA\nt8AcUNaWfivVjmlPNhktEywfFqOxc0ZrE2/LzsiUR1E9nwLUNkjSJG2/Fsb0TiDi\nRlX3GzTFAQKBgFXfa9cCp8vxiiNojq++CAfFw+ihfW1QH8PmGDf3AZaVk0BOehJm\nUc4+HebbQusEZfjBOq3c8DDuhUJmGBb77q4VW76VQS/SlmLghVD8/zgdOVPBZ9DX\n7hJpd3xxxQemM/XiqSYFNJBfYYdX4yNuhWR6O4oTjDGjfR8AnL3NTV3pAoGAOLWL\nDTglAJuJ4Zrsu4n07e3+mEqTwJ9aGQVmEC7HrCWYdbM3vVeYgvRa0c1j7Zh/UEf/\nofkA+LXfIGzLBdBExAvc1ArCtec+i9EEBQYxXqbklfHvOKpNQSy+wLmqCOwOb7Ca\ndzGfkUbEqVUO1ZoqvhE0K8Uncf+mDPw2sulYLwECgYEAm99jneyPEIBjKKAEsH4S\nlNRD8grkLYomxEIg2PQbWqo3LBtQCh9EZ7lRIhYCH4Izk7ByBW5PnXyFiznYptEK\nrHMzHrMtuGlj+xJY04c75PGogyrCW0Vf+NED3ftdgozxSi97J2JGhhv60bDt5GDZ\nN9DFg3Ekw/c/cxm+B0bHtBQ=\n-----END PRIVATE KEY-----\n",
+    "client_email": "earth-engine-nodejs@nasa-space-app-436223.iam.gserviceaccount.com",
+    "client_id": "101613652889906758154",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/earth-engine-nodejs%40nasa-space-app-436223.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  }
+  
