@@ -10,8 +10,8 @@ app = Flask(__name__)
 # os.environ['EARTHENGINE_CREDENTIALS'] = '/ee_credentials'
 # ee.Initialize()
 
-service_account = 'earth-engine-nodejs@nasa-space-app-436223.iam.gserviceaccount.com'
-credentials = ee.ServiceAccountCredentials(service_account, './servicekey.json')
+service_account = 'landsatpulse@nasa-space-app-436223.iam.gserviceaccount.com'
+credentials = ee.ServiceAccountCredentials(service_account, './service_key.json')
 ee.Initialize(credentials)
 
 @app.route('/')
