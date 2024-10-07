@@ -11,7 +11,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 
-import { addDays } from "date-fns";
+import { addDays, set } from "date-fns";
 import { useEffect, useState, useCallback } from "react";
 
 import { DateRange } from "react-day-picker";  
@@ -46,7 +46,7 @@ export default function Page() {
   const [lon, setLon] = useState(searchParams.get("lon") || "0");
   const [cloud, setCloud] = useState(parseInt(searchParams.get("cloud") || "20"));
 
-  const [iframeLoading, setIframeLoading] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
   
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -111,10 +111,6 @@ export default function Page() {
     setDate(newDateRange);
   }, []);
 
-  const handleIframeLoad = () => {
-    setIframeLoading(false);
-  };
-
   const handleIframeRender = () => {
     return (
       <iframe
@@ -122,13 +118,14 @@ export default function Page() {
         className="w-full h-full"
         title="Landsat Map"
         style={{ height: "640px" }}
-        // onLoad={handleIframeLoad}
+        onLoad={() => setIframeLoading(false)}
       ></iframe>
     );
   };
 
-  useState(() => {
+  useEffect(() => {
     handleIframeRender();
+    setIframeLoading(true);
   }, [cloud, lat, lon, selectedOption, date]);
 
   return (
@@ -157,7 +154,7 @@ export default function Page() {
                 <SelectContent>
                   <SelectItem value="landsat-9">Landsat 9</SelectItem>
                   <SelectItem value="landsat-8">Landsat 8</SelectItem>
-                  <SelectItem value="sentinel">Sentinel 2</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -190,11 +187,18 @@ export default function Page() {
         </div>
 
         <div className="mt-8">
-          {iframeLoading ? (
-            <p>Loading map...</p>
-          ) : (
-         handleIframeRender()
-          )}
+            {iframeLoading && (
+              <div>
+              <p>Loading map...</p>
+              <p>Cloud Coverage: {cloud}%</p>
+              <p>Date Range: {date?.from?.toLocaleDateString()} - {date?.to?.toLocaleDateString()}</p>
+              <p>Latitude: {lat}</p>
+              <p>Longitude: {lon}</p>
+              <p>Landsat: {selectedOption}</p>
+              </div>
+            )}
+            {handleIframeRender()}
+          
           
         </div>
       </div>
