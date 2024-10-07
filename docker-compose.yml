@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  python-mapr-streams:
+    build: 
+      context: ./python-server
+      dockerfile: ./Dockerfile
+    ports:
+      - "6001:6001"
+ 
+  landsat-pulse:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile 
+    env_file: ./.env 
+    ports:
+      - "6000:6000"
+    

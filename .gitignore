@@ -34,5 +34,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-Dockerfile
+# env files
+.env
+
+
+# python-server/ee_credentials and service_key.json
+ee_credentials
+service_key.json
+
  

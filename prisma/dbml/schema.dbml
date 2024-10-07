@@ -1,0 +1,211 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Account {
+  id String [pk]
+  userId Int [not null]
+  type String [not null]
+  provider String [not null]
+  providerAccountId String [not null]
+  refresh_token String
+  access_token String
+  expires_at Int
+  token_type String
+  scope String
+  id_token String
+  session_state String
+  user User [not null]
+
+  indexes {
+    (provider, providerAccountId) [unique]
+  }
+}
+
+Table Session {
+  id String [pk]
+  sessionToken String [unique, not null]
+  userId Int [not null]
+  expires DateTime [not null]
+  user User [not null]
+}
+
+Table User {
+  id Int [pk, increment]
+  email String [unique, not null]
+  passwordHash String
+  name String
+  image String
+  emailVerified DateTime
+  socketId String
+  role UserRole [not null, default: 'USER']
+  preferences UserPreferences
+  notifications Notification [not null]
+  locations Location [not null]
+  groundMeasurements GroundMeasurement [not null]
+  validations DataValidation [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  accounts Account [not null]
+  sessions Session [not null]
+}
+
+Table UserPreferences {
+  id Int [pk, increment]
+  user User [not null]
+  userId Int [unique, not null]
+  cloudCoverThreshold Float [not null, default: 15]
+  notificationMethods String [not null]
+  notificationLeadTime Int [not null, default: 1]
+  timeSpan Int [not null, default: 30]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table Location {
+  id Int [pk, increment]
+  name String
+  latitude Float [not null]
+  longitude Float [not null]
+  user User [not null]
+  userId Int [not null]
+  overpasses LandsatOverpass [not null]
+  geojson Json
+  measurements GroundMeasurement [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  notifications Notification [not null]
+}
+
+Table LandsatOverpass {
+  id Int [pk, increment]
+  location Location [not null]
+  locationId Int [not null]
+  datetime DateTime [not null]
+  satellite String [not null]
+  path Int [not null]
+  row Int [not null]
+  cloudCover Float
+  sceneId String
+  data LandsatData
+  notifications Notification [not null]
+  validations DataValidation [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table LandsatData {
+  id Int [pk, increment]
+  overpass LandsatOverpass [not null]
+  overpassId Int [unique, not null]
+  dataUrl String [not null]
+  metadata Json [not null]
+  srValues Json [not null]
+  validations DataValidation [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table GroundMeasurement {
+  id Int [pk, increment]
+  user User [not null]
+  userId Int [not null]
+  location Location [not null]
+  locationId Int [not null]
+  datetime DateTime [not null]
+  measurements Json [not null]
+  notes String
+  validations DataValidation [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table DataValidation {
+  id Int [pk, increment]
+  landsatData LandsatData [not null]
+  landsatDataId Int [not null]
+  groundMeasurement GroundMeasurement [not null]
+  groundMeasurementId Int [not null]
+  validator User [not null]
+  validatorId Int [not null]
+  validationDate DateTime [default: `now()`, not null]
+  validationResult ValidationResult [not null]
+  comments String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  LandsatOverpass LandsatOverpass
+  landsatOverpassId Int
+}
+
+Table Notification {
+  id Int [pk, increment]
+  user User [not null]
+  userId Int [not null]
+  overpass LandsatOverpass
+  overpassId Int
+  leadTime Int
+  isSent Boolean [not null, default: false]
+  sentAt DateTime
+  satellite String
+  read Boolean [not null, default: false]
+  notifyBefore Int [not null, default: 1]
+  notifyIn String [not null, default: 'EMAIL,SMS,IN_APP, ALL']
+  smsNumber String
+  email String
+  completed Boolean [not null, default: false]
+  locations Location [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table LocationToNotification {
+  notificationsId Int [ref: > Notification.id]
+  locationsId Int [ref: > Location.id]
+}
+
+Enum UserRole {
+  USER
+  EXPERT
+  ADMIN
+}
+
+Enum NotificationMethod {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+Enum ValidationResult {
+  VALID
+  INVALID
+  PARTIALLY_VALID
+  PENDING
+}
+
+Ref: Account.userId > User.id [delete: Cascade]
+
+Ref: Session.userId > User.id [delete: Cascade]
+
+Ref: UserPreferences.userId - User.id
+
+Ref: Location.userId > User.id
+
+Ref: LandsatOverpass.locationId > Location.id
+
+Ref: LandsatData.overpassId - LandsatOverpass.id
+
+Ref: GroundMeasurement.userId > User.id
+
+Ref: GroundMeasurement.locationId > Location.id
+
+Ref: DataValidation.landsatDataId > LandsatData.id
+
+Ref: DataValidation.groundMeasurementId > GroundMeasurement.id
+
+Ref: DataValidation.validatorId > User.id
+
+Ref: DataValidation.landsatOverpassId > LandsatOverpass.id
+
+Ref: Notification.userId > User.id
+
+Ref: Notification.overpassId > LandsatOverpass.id

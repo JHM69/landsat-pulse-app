@@ -2,7 +2,7 @@
   "name": "landsat",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+  "scripts": { 
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -118,6 +118,7 @@
     "@types/uuid": "^9.0.7",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
-    "prettier": "3.0.3"
+    "prettier": "3.0.3",
+    "prisma-dbml-generator": "^0.12.0"
   }
 }
