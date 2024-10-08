@@ -42,9 +42,31 @@ export default function Page() {
     };
   });
 
-  const [lat, setLat] = useState(searchParams.get("lat") || "0");
-  const [lon, setLon] = useState(searchParams.get("lon") || "0");
-  const [cloud, setCloud] = useState(parseInt(searchParams.get("cloud") || "20"));
+  const [lat, setLat] = useState(() => {
+    try {
+      return searchParams.get("lat") || "29.7604";
+    } catch (error) {
+      console.error("Error parsing latitude parameter:", error);
+      return "29.7604";
+    }
+  });
+  
+  const [lon, setLon] = useState(() => {
+    try {
+      return searchParams.get("lon") || "-95.3698";
+    } catch (error) {
+      console.error("Error parsing longitude parameter:", error);
+      return "-95.3698";
+    }
+  });
+  const [cloud, setCloud] = useState(() => {
+    try {
+      return parseInt(searchParams.get("cloud") || "20");
+    } catch (error) {
+      console.error("Error parsing cloud parameter:", error);
+      return 20;
+    }
+  });
 
   const [iframeLoading, setIframeLoading] = useState(true);
   
@@ -143,7 +165,7 @@ export default function Page() {
                 max={100}
                 className="w-[100px]"
               />
-              <span>{cloud}%</span>
+              <span>Cloud: {cloud}%</span>
             </div>
 
             <div className="w-[110px] flex items-center space-x-2">
@@ -157,22 +179,7 @@ export default function Page() {
                   <SelectItem value="both">Both</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <input
-              type="text"
-              value={lat}
-              onChange={(e) => setLat(e.target.value)}
-              placeholder="Latitude"
-              className="border rounded px-2 py-1"
-            />
-            <input
-              type="text"
-              value={lon}
-              onChange={(e) => setLon(e.target.value)}
-              placeholder="Longitude"
-              className="border rounded px-2 py-1"
-            />
+            </div> 
           </div>
         </div>
 
