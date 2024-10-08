@@ -13,10 +13,10 @@ export const TrpcProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {  
 
-  const trpcHttpUrl = 'http://localhost:6002/api/trpc/';
+  const trpcHttpUrl = 'http://199.193.6.184:6002/api/trpc/';
   
   const wsClient = createWSClient({
-    url: 'ws://localhost:6002/api/trpc/', // Updated to ws://
+    url: 'ws://199.193.6.184:6002/api/trpc/', // Updated to ws://
   });
  
   const [trpcClient] = useState(() =>
